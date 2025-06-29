@@ -104,8 +104,12 @@ describe("TokenFarm", function () {
     const pending = (await tokenFarm.users(user1.address)).pendingRewards;
     await tokenFarm.connect(user1).claimRewards();
 
+    // Calcular el monto neto después de la comisión del 10%
+    const fee = (pending * 10n) / 100n;
+    const expectedNetReward = pending - fee;
+
     const dappBal = await dappToken.balanceOf(user1.address);
-    expect(dappBal).to.equal(pending);
+    expect(dappBal).to.equal(expectedNetReward);
   });
 
   it("no permite reclamar después de retirar el staking (reverte)", async function () {
