@@ -20,7 +20,14 @@ contract TokenFarm {
     DAppToken public dappToken;
     LPToken public lpToken;
 
-    uint256 public constant REWARD_PER_BLOCK = 1e18; // Recompensa por bloque (total para todos los usuarios)
+    // uint256 public constant REWARD_PER_BLOCK = 1e18; // Recompensa por bloque (total para todos los usuarios)
+    // ** Agregado para bonus 4 **
+    // Rango de recompensa por bloque
+    uint256 public rewardPerBlock;
+    uint256 public immutable minRewardPerBlock = 1e17; // 0.1 DAPP
+    uint256 public immutable maxRewardPerBlock = 10e18; // 10 DAPP
+
+
     uint256 public totalStakingBalance; // Total de tokens en staking
 
     address[] public stakers;
@@ -35,12 +42,12 @@ contract TokenFarm {
     modifier onlyStaker() {
     require(users[msg.sender].isStaking, "No estas haciendo staking");
     _;
-}
+    }
 
-modifier onlyOwner() {
-    require(msg.sender == owner, "Solo el owner puede distribuir recompensas");
-    _;
-}
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Solo el owner puede distribuir recompensas");
+        _;
+    }
 
 
     // Eventos
@@ -66,7 +73,19 @@ modifier onlyOwner() {
         lpToken = _lpToken;
         // Configurar al owner del contrato como el creador de este contrato.
         owner = msg.sender;
+        // ** Agregado para bonus 4 **
+        // Establecer la recompensa por bloque inicial.
+        rewardPerBlock = 1e18; // 1 DAPP por bloque
     }
+
+    // ** Agregado para bonus 4 **
+    // Establece la recompensa por bloque.
+    // _newReward Nueva recompensa por bloque.
+        function setRewardPerBlock(uint256 _newReward) external onlyOwner {
+        require(_newReward >= minRewardPerBlock && _newReward <= maxRewardPerBlock, "Reward fuera de rango permitido");
+        rewardPerBlock = _newReward;
+    }
+
 
     /**
      * @notice Deposita tokens LP para staking.
@@ -212,7 +231,7 @@ modifier onlyOwner() {
         uint256 userStaking = users[beneficiary].stakingBalance;
         uint256 share = (userStaking * 1e18) / totalStakingBalance; 
         // Calcular las recompensas del usuario multiplicando la proporción por REWARD_PER_BLOCK y los bloques transcurridos.
-        uint256 reward = (REWARD_PER_BLOCK * blocksPassed * share) / 1e18; 
+        uint256 reward = (rewardPerBlock * blocksPassed * share) / 1e18; 
         // Actualizar las recompensas pendientes del usuario en pendingRewards.
         users[beneficiary].pendingRewards += reward;
         // Actualizar el checkpoint del usuario al bloque actual.
