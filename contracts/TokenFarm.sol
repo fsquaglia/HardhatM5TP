@@ -26,6 +26,9 @@ contract TokenFarm {
     uint256 public rewardPerBlock;
     uint256 public immutable minRewardPerBlock = 1e17; // 0.1 DAPP
     uint256 public immutable maxRewardPerBlock = 10e18; // 10 DAPP
+    // ** Agregado para bonus 5 **
+    uint256 public feePercent = 10; // comisión del 10%
+    uint256 public totalFeesCollected;
 
 
     uint256 public totalStakingBalance; // Total de tokens en staking
@@ -153,10 +156,16 @@ contract TokenFarm {
         require(pendingAmount > 0, "No tienes recompensas pendientes");        
         // Restablecer las recompensas pendientes del usuario a 0.
         users[msg.sender].pendingRewards = 0;
+        // ** Agregado para bonus 5 **
+        // Calcular la comisión a cobrar.
+        uint256 fee = (pendingAmount * feePercent) / 100;
+        uint256 netReward = pendingAmount - fee;
+        totalFeesCollected += fee;
+
         // Llamar a la función de acuñación (mint) en el contrato DappToken para transferir las recompensas al usuario.
-        dappToken.mint(msg.sender, pendingAmount);
+        dappToken.mint(msg.sender, netReward);
         // Emitir un evento de reclamo de recompensas.
-        emit RewardsClaimed(msg.sender, pendingAmount);
+        emit RewardsClaimed(msg.sender, netReward);
     }
 
     /**
@@ -237,4 +246,18 @@ contract TokenFarm {
         // Actualizar el checkpoint del usuario al bloque actual.
         users[beneficiary].checkpoint = block.number;
     }
+
+    // ** Agregado para bonus 5 **
+    /**
+     * @notice Retira las comisiones acumuladas y las transfiere al owner.
+     * @dev Esta función solo puede ser llamada por el owner del contrato.
+    * Asegura que haya comisiones acumuladas antes de realizar el retiro.
+    */
+    function withdrawFees() external onlyOwner {
+    require(totalFeesCollected > 0, "No hay comisiones acumuladas");
+    uint256 amount = totalFeesCollected;
+    totalFeesCollected = 0;
+    dappToken.mint(owner, amount);
+}
+
 }

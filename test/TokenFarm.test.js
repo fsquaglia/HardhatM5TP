@@ -143,4 +143,47 @@ describe("TokenFarm", function () {
       tokenFarm.connect(owner).setRewardPerBlock(demasiadoAlto)
     ).to.be.revertedWith("Reward fuera de rango permitido");
   });
+
+  it("cobra una comisión al reclamar recompensas", async function () {
+    await lpToken
+      .connect(user1)
+      .approve(await tokenFarm.getAddress(), ethers.parseEther("100"));
+    await tokenFarm.connect(user1).deposit(ethers.parseEther("100"));
+
+    // Avanzar algunos bloques
+    await network.provider.send("evm_mine");
+    await network.provider.send("evm_mine");
+
+    await tokenFarm.connect(owner).distributeRewardsAll();
+
+    const pending = (await tokenFarm.users(user1.address)).pendingRewards;
+
+    await tokenFarm.connect(user1).claimRewards();
+
+    const userBalance = await dappToken.balanceOf(user1.address);
+    const fee = (pending * 10n) / 100n;
+    const expectedNet = pending - fee;
+
+    expect(userBalance).to.equal(expectedNet);
+  });
+
+  it("permite al owner retirar las comisiones acumuladas", async function () {
+    await lpToken
+      .connect(user1)
+      .approve(await tokenFarm.getAddress(), ethers.parseEther("100"));
+    await tokenFarm.connect(user1).deposit(ethers.parseEther("100"));
+
+    await network.provider.send("evm_mine");
+    await network.provider.send("evm_mine");
+
+    await tokenFarm.connect(owner).distributeRewardsAll();
+    await tokenFarm.connect(user1).claimRewards();
+
+    const feeAmount = await tokenFarm.totalFeesCollected();
+
+    await tokenFarm.connect(owner).withdrawFees();
+
+    const ownerBalance = await dappToken.balanceOf(owner.address);
+    expect(ownerBalance).to.equal(feeAmount);
+  });
 });
