@@ -1,13 +1,56 @@
-# Sample Hardhat Project
+# TokenFarm - DeFi Yield Farming
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+## Requisitos
 
-Try running some of the following tasks:
+- Node.js
+- Hardhat con Ethers.js
+- Alchemy
+- Cuenta en Sepolia con ETH
 
-```shell
-npx hardhat help
+## Configuración
+
+1. Instalar dependencias:
+
+```bash
+npm install
+```
+
+2. Agregar variables a .env para un deploy en Sepolia
+
+```bash
+ALCHEMY_API_KEY=""
+SEPOLIA_PRIVATE_KEY=""
+ETHERSCAN_API_KEY=""
+```
+
+3. Compilar
+
+```bash
+npx hardhat compile
+```
+
+4. Testear
+
+```bash
 npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.js
+```
+
+5. Deployar en Sepolia
+
+```bash
+npx hardhat run ignition/modules/TokenFarm.js --network sepolia
+```
+
+6. Interactuar
+
+##### Editar el archivo scripts/interactTokenFarm.js comentando y descomentando las líneas necesarias dentro de la función:
+
+"async function main() {...}"
+
+##### Modificar la variable TOKENFARM_ADDRESS con el contrato deployado por el usuario
+
+Correr con:
+
+```bash
+npx hardhat run scripts/interactTokenFarm.js
 ```
